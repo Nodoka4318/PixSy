@@ -24,6 +24,7 @@
         /// </summary>
         private void InitializeComponent() {
             this.vScrollBar = new System.Windows.Forms.VScrollBar();
+            this.hScrollBar = new System.Windows.Forms.HScrollBar();
             this.SuspendLayout();
             // 
             // vScrollBar
@@ -34,10 +35,19 @@
             this.vScrollBar.Size = new System.Drawing.Size(17, 150);
             this.vScrollBar.TabIndex = 0;
             // 
+            // hScrollBar
+            // 
+            this.hScrollBar.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.hScrollBar.Location = new System.Drawing.Point(0, 133);
+            this.hScrollBar.Name = "hScrollBar";
+            this.hScrollBar.Size = new System.Drawing.Size(133, 17);
+            this.hScrollBar.TabIndex = 1;
+            // 
             // PianoRoll
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.hScrollBar);
             this.Controls.Add(this.vScrollBar);
             this.Name = "PianoRoll";
             this.ResumeLayout(false);
@@ -47,5 +57,6 @@
         #endregion
 
         private VScrollBar vScrollBar;
+        private HScrollBar hScrollBar;
     }
 }

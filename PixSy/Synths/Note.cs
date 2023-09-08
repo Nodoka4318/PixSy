@@ -9,21 +9,21 @@ namespace PixSy.Synths {
         public float Length { get; set; }
         public float Frequency { 
             get {
-                return PosToFreq(Pos);
+                return VPosToFreq(VPos);
             }
         }
 
         /// <summary>
         /// C4=0
         /// </summary>
-        public int Pos { get; set; }
+        public int VPos { get; set; }
         public string Pitch {
             get {
-                return PosToPitch(Pos);
+                return VPosToPitch(VPos);
             }
 
             set {
-                Pos = PitchToPos(value);
+                VPos = PitchToVPos(value);
             }
         }
 
@@ -41,17 +41,17 @@ namespace PixSy.Synths {
 
         }
 
-        private static float PosToFreq(int pos) {
-            return (float)(Tuning * Math.Pow(2.0, pos / 12.0));
+        private static float VPosToFreq(int vPos) {
+            return (float)(Tuning * Math.Pow(2.0, vPos / 12.0));
         }
 
-        private static int PitchToPos(string pitch) {
+        private static int PitchToVPos(string pitch) {
             throw new NotImplementedException();
         }
 
-        public static string PosToPitch(int pos) {
-            int index = pos < 0 ? (-pos % 12 == 0 ? 0 : 12 - (-pos) % 12) : pos % 12;
-            int octave = 4 + (pos / 12);
+        public static string VPosToPitch(int vPos) {
+            int index = vPos < 0 ? (-vPos % 12 == 0 ? 0 : 12 - (-vPos) % 12) : vPos % 12;
+            int octave = 4 + (vPos / 12);
             var pitchName = PitchNames[index] + octave;
 
             return pitchName;

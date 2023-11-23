@@ -12,6 +12,7 @@ namespace PixSy.Synths {
                 return VPosToFreq(VPos);
             }
         }
+        public int Id { get => _id; }
 
         /// <summary>
         /// C4=0
@@ -30,15 +31,20 @@ namespace PixSy.Synths {
         public float StartF { get; set; }
         public float EndF { get; set; }
 
+        private int _id;
+
         public static readonly string[] PitchNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
         const float Tuning = 440f;
 
         public Note(string pitch, float length, float start, float end) {
-
+            throw new NotImplementedException();
         }
 
-        public Note(float pos, float length, float start, float end) {
-
+        public Note(int pos, float start, float end, int id) {
+            VPos = pos;
+            StartF = start;
+            EndF = end;
+            _id = id;
         }
 
         private static float VPosToFreq(int vPos) {

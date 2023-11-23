@@ -40,9 +40,19 @@ namespace PixSy.Views.Widgets {
             hScrollBar.ValueChanged += HScrollBar_ValueChanged;
             hScrollBar.Minimum = 0;
 
+            Click += PianoRoll_Click;
+
             _notes = new List<Note>();
             _vPos = 12;
             _hPos = 0;
+        }
+
+        private void PianoRoll_Click(object? sender, EventArgs e) {
+            var cPoint = PointToClient(Cursor.Position);
+            Note? note;
+            if (TryGetNoteAt(cPoint, out note)) {
+                MessageBox.Show(note.Id + "");
+            }
         }
 
         private void HScrollBar_ValueChanged(object? sender, EventArgs e) {
@@ -57,8 +67,8 @@ namespace PixSy.Views.Widgets {
             base.OnPaintBackground(e);
 
             DrawKeyboard(e.Graphics);
-            DrawBeatLines(e.Graphics);
             DrawNotes(e.Graphics);
+            DrawBeatLines(e.Graphics);
         }
 
         private void DrawKeyboard(Graphics graphics) {
@@ -102,9 +112,47 @@ namespace PixSy.Views.Widgets {
         }
 
         private void DrawNotes(Graphics graphics) {
+            _notes.Add(new Note(0, 5, 6.5f, 0));
+            _notes.Add(new Note(-5, 6, 7, 1));
+            _notes.Add(new Note(5, 7, 8, 2));
 
+            foreach (var note in _notes) {
+                if (_hPos >= note.EndF) {
+                    continue;
+                }
+
+                if (_vPos < note.VPos) {
+                    continue;
+                }
+
+                var noteX = (int) Math.Round(BeatWidth * (note.StartF - _hPos));
+                var noteY = (int) Math.Round((double) KeyHeight * (_vPos - note.VPos));
+                var noteWidth = (int) Math.Round(BeatWidth * (note.EndF - note.StartF));
+
+                if (_hPos >= note.StartF) {
+                    noteX = 0;
+                    noteWidth -= (int) Math.Round(BeatWidth * (_hPos - note.StartF));
+                }
+
+                graphics.FillRectangle(Brushes.Aqua, new Rectangle(noteX, noteY, noteWidth, KeyHeight)); // TODO: Noteの色
+            }
         }
 
+        public bool TryGetNoteAt(Point point, out Note? note) {
+            var pointVPos = _vPos + (point.X - point.X % BeatWidth) / BeatWidth; // 多分計算方法違う
+            var pointHPos = _hPos + point.Y / KeyHeight;
+
+            var condition = _notes.Where(n => n.VPos == pointVPos && n.StartF <= pointHPos && pointHPos <= n.EndF);
+            
+            if (condition.Any()) { 
+                note = condition.First();
+                return true;
+            } else {
+                note = null;
+                return false;
+            }
+        }
+        
         public void GoUp(int offset) {
             _vPos += offset;
             Invalidate();

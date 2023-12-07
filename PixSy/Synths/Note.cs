@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PixSy.Synths {
     public class Note {
-        public float Length { get; set; }
+        public float Length => EndF - StartF;
         public float Frequency { 
             get {
                 return VPosToFreq(VPos);
@@ -61,6 +61,13 @@ namespace PixSy.Synths {
             var pitchName = PitchNames[index] + octave;
 
             return pitchName;
+        }
+
+        public override bool Equals(object? obj) {
+            if (obj is Note note) {
+                return note.Id == Id;
+            }
+            return false;
         }
     }
 }

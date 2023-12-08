@@ -23,34 +23,30 @@
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
-            this.pianoRoll1 = new PixSy.Views.Widgets.PianoRoll();
-            this.SuspendLayout();
+            trackRoll1 = new Widgets.TrackRoll();
+            SuspendLayout();
             // 
-            // pianoRoll1
+            // trackRoll1
             // 
-            this.pianoRoll1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pianoRoll1.Location = new System.Drawing.Point(0, 0);
-            this.pianoRoll1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
-            this.pianoRoll1.Name = "pianoRoll1";
-            this.pianoRoll1.Size = new System.Drawing.Size(560, 270);
-            this.pianoRoll1.TabIndex = 0;
+            trackRoll1.Dock = DockStyle.Fill;
+            trackRoll1.Location = new Point(0, 0);
+            trackRoll1.Name = "trackRoll1";
+            trackRoll1.Size = new Size(800, 450);
+            trackRoll1.TabIndex = 0;
             // 
             // MainView
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(560, 270);
-            this.Controls.Add(this.pianoRoll1);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
-            this.Name = "MainView";
-            this.Text = "MainView";
-            this.Load += new System.EventHandler(this.MainView_Load);
-            this.ResumeLayout(false);
-
+            AutoScaleDimensions = new SizeF(13F, 32F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(800, 450);
+            Controls.Add(trackRoll1);
+            Name = "MainView";
+            Text = "MainView";
+            ResumeLayout(false);
         }
 
         #endregion
 
-        private Widgets.PianoRoll pianoRoll1;
+        private Widgets.TrackRoll trackRoll1;
     }
 }

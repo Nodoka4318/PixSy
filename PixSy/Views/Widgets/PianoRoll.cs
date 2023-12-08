@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Configuration;
 using System.Data;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
@@ -14,8 +15,40 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace PixSy.Views.Widgets {
-    public unsafe partial class PianoRoll : UserControl {
+    public partial class PianoRoll : UserControl {
+        public enum EditMode {
+            Select, Pen
+        }
+
         public int Rhythm { get => 4; } // 拍子
+        public int NextNoteId => _notes.Count == 0 ? 0 : _notes.Select(n => n.Id).Max() + 1;
+        public float CurrentPlayHPos {
+            get => _currentPlayHPos;
+            set {
+                _currentPlayHPos = value;
+
+                if (_currentPlayHPos > _hPos + Width / (float)BeatWidth) {
+                    var hPos = _hPos + Width / BeatWidth;
+                    SetHPos(hPos);
+
+                    if (hPos + 16 > hScrollBar.Maximum) {
+                        hScrollBar.Maximum = hPos + 16;
+                    }
+
+                    hScrollBar.Value = hPos;
+                }
+
+                Invalidate();
+            }
+        }
+
+        public List<Note> Notes => _notes;
+        public EditMode Mode { get; set; }
+
+        public bool IsPlaying { get; set; }
+        public string Title { get; set; }
+        public int Id { get; private set; }
+        public int MinimumBar { get; set; } // TODO: TrackRollとの整合性を取る
 
         private List<Note> _notes;
         private int _vPos; // 一番上のキーの高さ. 0=C5(midC=C4)
@@ -25,6 +58,7 @@ namespace PixSy.Views.Widgets {
         private bool _isResizing = false; // 音符の長さを変更中かどうか
         private byte _draggingEdge = 0; // 0: なし, 1: 左, 2: 右
         private float _dragOffset; // ドラッグ開始時の音符とマウスの差分
+        private float _currentPlayHPos; // 再生中の位置
 
         static readonly Color WhiteKeyColor = Color.Gainsboro;
         static readonly Color BlackKeyColor = Color.DarkGray;
@@ -45,8 +79,10 @@ namespace PixSy.Views.Widgets {
 
             hScrollBar.ValueChanged += HScrollBar_ValueChanged;
             hScrollBar.Minimum = 0;
+            hScrollBar.Maximum = 32;
 
-            Click += PianoRoll_Click;
+            MouseClick += PianoRoll_Click;
+
             MouseDown += PianoRoll_MouseDown;
             MouseUp += PianoRoll_MouseUp;
             MouseMove += PianoRoll_MouseMove;
@@ -55,9 +91,10 @@ namespace PixSy.Views.Widgets {
             _vPos = 12;
             _hPos = 0;
 
-            _notes.Add(new Note(0, 5, 6.5f, 0));
-            _notes.Add(new Note(-5, 6, 7, 1));
-            _notes.Add(new Note(5, 7, 8, 2));
+            MinimumBar = 1;
+
+            _currentPlayHPos = 0f;
+            Mode = EditMode.Select;
         }
 
         private void PianoRoll_MouseMove(object? sender, MouseEventArgs e) {
@@ -78,13 +115,21 @@ namespace PixSy.Views.Widgets {
                     _selectedNote.EndF = pointHPos - (pointHPos % 0.1f);
                 }
 
-                if (_selectedNote.Length < 0.1f) {
+                if (_selectedNote.StartF < 0) {
+                    _selectedNote.StartF = 0;
+                }
+
+                if (_selectedNote.Length <= 0.1f) {
                     _selectedNote.EndF = _selectedNote.StartF + 0.2f;
                 }
 
                 Invalidate();
             } else if (_isDragging) {
                 var startF = pointHPos - _dragOffset;
+
+                if (startF < 0) {
+                    startF = 0;
+                }
 
                 _selectedNote.VPos = pointVPos;
                 _selectedNote.StartF = startF - (startF % 0.1f);
@@ -102,25 +147,42 @@ namespace PixSy.Views.Widgets {
         private void PianoRoll_MouseDown(object? sender, MouseEventArgs e) {
             var cPoint = PointToClient(Cursor.Position);
             Note? note;
-            if (TryGetNoteAt(cPoint, out note)) {
-                _selectedNote = note;
-                _isDragging = true;
 
-                var pointHPos = _hPos + cPoint.X / (float) BeatWidth;
-                _dragOffset = pointHPos - _selectedNote.StartF;
+            if (e.Button == MouseButtons.Right) {
+                if (Mode == EditMode.Pen) {
+                    if (TryGetNoteAt(cPoint, out note)) {
+                        _notes.Remove(note);
+                        Invalidate();
+                    }
+                }
+            } else if (e.Button == MouseButtons.Left) {
+                if (TryGetNoteAt(cPoint, out note)) {
+                    _selectedNote = note;
+                    _isDragging = true;
 
-                _draggingEdge = _dragOffset < 0.1f ? (byte) 1 : _selectedNote.Length - _dragOffset < 0.1f ? (byte) 2 : (byte) 0;
-                _isResizing = _draggingEdge != 0;
+                    var pointHPos = _hPos + cPoint.X / (float)BeatWidth;
+                    _dragOffset = pointHPos - _selectedNote.StartF;
 
-                Invalidate();
-            } else {
-                _selectedNote = null;
-                Invalidate();
+                    _draggingEdge = _dragOffset < 0.1f ? (byte)1 : _selectedNote.Length - _dragOffset < 0.1f ? (byte)2 : (byte)0;
+                    _isResizing = _draggingEdge != 0;
+
+                    Invalidate();
+                } else if (Mode == EditMode.Pen) {
+                    var pointHPos = _hPos + cPoint.X / (float)BeatWidth;
+                    var pointVPos = _vPos - cPoint.Y / KeyHeight;
+                    _selectedNote = AddNewNote(pointVPos, pointHPos);
+
+                    Invalidate();
+                } else {
+                    _selectedNote = null;
+
+                    Invalidate();
+                }
             }
         }
 
-        private void PianoRoll_Click(object? sender, EventArgs e) {
-            
+        private void PianoRoll_Click(object? sender, MouseEventArgs e) {
+
         }
 
         private void HScrollBar_ValueChanged(object? sender, EventArgs e) {
@@ -137,13 +199,17 @@ namespace PixSy.Views.Widgets {
             DrawKeyboard(e.Graphics);
             DrawNotes(e.Graphics);
             DrawBeatLines(e.Graphics);
+
+            if (IsPlaying) {
+                DrawPlayLine(e.Graphics);
+            }
         }
 
         private void DrawKeyboard(Graphics graphics) {
             // var offset = _pos >= 0 ? KeyHeight - (Math.Abs(_pos) % 20) : (Math.Abs(_pos) % 20);
             var currentPos = _vPos; // 音階と座標の高さは逆だからマイナス
 
-            for (int i = 0; i <= Height; ) {
+            for (int i = 0; i <= Height;) {
                 var keyType = VPosToKeyType(currentPos);
                 var keyColor = keyType == 0 ? WhiteKeyColor : BlackKeyColor;
 
@@ -179,6 +245,13 @@ namespace PixSy.Views.Widgets {
             }
         }
 
+        private void DrawPlayLine(Graphics graphics) {
+            var playLineX = (int)Math.Round(BeatWidth * (_currentPlayHPos - _hPos));
+            graphics.DrawLine(new Pen(Brushes.Red) {
+                DashStyle = DashStyle.Solid
+            }, playLineX, 0, playLineX, Height);
+        }
+
         private void DrawNotes(Graphics graphics) {
             foreach (var note in _notes) {
                 if (_hPos >= note.EndF) {
@@ -189,18 +262,22 @@ namespace PixSy.Views.Widgets {
                     continue;
                 }
 
-                var noteX = (int) Math.Round(BeatWidth * (note.StartF - _hPos));
-                var noteY = (int) Math.Round((double) KeyHeight * (_vPos - note.VPos));
-                var noteWidth = (int) Math.Round(BeatWidth * (note.EndF - note.StartF));
+                var noteX = (int)Math.Round(BeatWidth * (note.StartF - _hPos));
+                var noteY = (int)Math.Round((double)KeyHeight * (_vPos - note.VPos));
+                var noteWidth = (int)Math.Round(BeatWidth * (note.EndF - note.StartF));
                 var noteColor = Brushes.Aqua;
 
                 if (_hPos >= note.StartF) {
                     noteX = 0;
-                    noteWidth -= (int) Math.Round(BeatWidth * (_hPos - note.StartF));
+                    noteWidth -= (int)Math.Round(BeatWidth * (_hPos - note.StartF));
                 }
 
                 if (note.Equals(_selectedNote)) {
                     noteColor = Brushes.LightBlue;
+                }
+
+                if (note.IsPlaying) {
+                    noteColor = Brushes.LightPink;
                 }
 
                 graphics.FillRectangle(noteColor, new Rectangle(noteX, noteY, noteWidth, KeyHeight)); // TODO: Noteの色
@@ -208,12 +285,12 @@ namespace PixSy.Views.Widgets {
         }
 
         public bool TryGetNoteAt(Point point, out Note? note) {
-            var pointHPos = _hPos + point.X / (float) BeatWidth;
+            var pointHPos = _hPos + point.X / (float)BeatWidth;
             var pointVPos = _vPos - point.Y / KeyHeight;
 
             var condition = _notes.Where(n => n.VPos == pointVPos && n.StartF <= pointHPos && pointHPos <= n.EndF);
-            
-            if (condition.Any()) { 
+
+            if (condition.Any()) {
                 note = condition.First();
                 return true;
             } else {
@@ -221,7 +298,7 @@ namespace PixSy.Views.Widgets {
                 return false;
             }
         }
-        
+
         public void GoUp(int offset) {
             _vPos += offset;
             Invalidate();
@@ -246,12 +323,33 @@ namespace PixSy.Views.Widgets {
             _notes.Add(note);
         }
 
+        public Note AddNewNote(int vPos, float hPos) {
+            var newNote = new Note(vPos, hPos, hPos + 1, NextNoteId, this);
+            _notes.Add(newNote);
+
+            if (hPos + 16 > hScrollBar.Maximum) {
+                hScrollBar.Maximum = (int)Math.Ceiling(hPos + 16);
+            }
+
+            return newNote;
+        }
+
         public void AddNotes(IEnumerable<Note> notes) {
             _notes.AddRange(notes);
         }
 
         public void SetNotes(IEnumerable<Note> notes) {
             _notes = notes.ToList();
+        }
+
+        // TODO: 消す予定
+        public void PlaySync() {
+            _notes.OrderBy(n => n.StartF).ToList().ForEach(n => n.PlaySoundSync());
+        }
+
+        public int GetHLength() {
+            var max = _notes.Count == 0 ? 1 : _notes.Select(n => n.EndF).Max();
+            return (int) Math.Ceiling(max / Rhythm);
         }
 
         private static byte VPosToKeyType(int vPos) {

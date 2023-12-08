@@ -1,5 +1,4 @@
-﻿using PixSy.Views.Widgets;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -15,10 +14,6 @@ namespace PixSy.Views {
             InitializeComponent();
 
             Text = $"{PixSyAppInfo.AppName} ({PixSyAppInfo.Version})";
-        }
-
-        private void MainView_Load(object sender, EventArgs e) {
-
         }
     }
 }

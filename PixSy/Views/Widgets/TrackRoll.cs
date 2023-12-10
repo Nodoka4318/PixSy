@@ -17,6 +17,7 @@ namespace PixSy.Views.Widgets {
             public PianoRoll PianoRoll { get; set; }
             public int TrackNumber { get; set; }
             public int StartBar { get; set; }
+            public int Id { get; set; }
             public int VPos {
                 get => TrackNumber - 1; // 座標ではなくトラック番号で管理したいので
                 set {
@@ -31,10 +32,11 @@ namespace PixSy.Views.Widgets {
                 }
             }
 
-            public TrackElement(PianoRoll pianoRoll, int trackNumber, int startBar) {
+            public TrackElement(PianoRoll pianoRoll, int trackNumber, int startBar, int id) {
                 PianoRoll = pianoRoll;
                 TrackNumber = trackNumber;
                 StartBar = startBar;
+                Id = id;
             }
         }
 
@@ -58,6 +60,32 @@ namespace PixSy.Views.Widgets {
             }
         }
 
+        public bool IsPlaying { get; set; }
+        public int Rhythm => 4; // TODO: 一般化
+        public List<TrackElement> TrackElements => _trackElements;
+        public float CurrentPlayHPos {
+            get => _currentPlayHPos;
+            set {
+                _currentPlayHPos = value;
+
+                // TODO:
+                /*
+                if (_currentPlayHPos / Rhythm > _hPos + Width / BarWidth) {
+                    var hPos = _hPos + Width / BarWidth;
+                    if (hPos + 4 > hScrollBar.Maximum) {
+                        hScrollBar.Maximum = hPos + 4;
+                    }
+
+                    _hPos = hPos;
+                    hScrollBar.Value = hPos;
+                }
+                */
+
+                _trackElements.ForEach(e => e.PianoRoll.CurrentPlayHPos = value - e.HPos * Rhythm);
+                Invalidate();
+            }
+        }
+
         private List<TrackElement> _trackElements;
         private int _hPos;
         private int _vPos; // 一番上が0
@@ -65,6 +93,7 @@ namespace PixSy.Views.Widgets {
         private float _dragOffset;
         private TrackElement? _selectedElement;
         private System.Windows.Forms.Timer _mainTimer;
+        private float _currentPlayHPos; // 再生中の位置
 
         private readonly int TrackHeight = 80; // トラックの高さ
         private readonly int BarWidth = 120; // 小節の幅
@@ -86,6 +115,7 @@ namespace PixSy.Views.Widgets {
             BackColor = Color.LightGray;
 
             _trackElements = new List<TrackElement>();
+            _currentPlayHPos = 0;
 
             vScrollBar.ValueChanged += VScrollBar_ValueChanged;
             hScrollBar.ValueChanged += HScrollBar_ValueChanged;
@@ -100,14 +130,6 @@ namespace PixSy.Views.Widgets {
                 Invalidate();
             };
             _mainTimer.Start();
-
-            // デバッグ用
-            var pr = new PianoRoll();
-            pr.AddNewNote(0, 0);
-            pr.AddNewNote(4, 20);
-            pr.AddNewNote(7, 25);
-
-            _trackElements.Add(new TrackElement(pr, 4, 1));
         }
 
         private void TrackRoll_MouseUp(object? sender, MouseEventArgs e) {
@@ -135,6 +157,13 @@ namespace PixSy.Views.Widgets {
                 _selectedElement.VPos = pointVPos;
 
                 Invalidate();
+            } else {
+                if (e.Button == MouseButtons.Left) {
+                    var pointHPos = _hPos + cPoint.X / (float) BarWidth * Rhythm;
+                    _currentPlayHPos = pointHPos < 0 ? 0 : pointHPos - (pointHPos % 0.1f);
+
+                    Invalidate();
+                }
             }
         }
 
@@ -154,6 +183,10 @@ namespace PixSy.Views.Widgets {
                     Invalidate();
                 } else {
                     _selectedElement = null;
+
+                    var pointHPos = _hPos + cPoint.X / (float) BarWidth * Rhythm;
+                    _currentPlayHPos = pointHPos < 0 ? 0 : pointHPos - (pointHPos % 0.1f);
+
                     Invalidate();
                 }
             } else if (e.Button == MouseButtons.Right) {
@@ -163,6 +196,13 @@ namespace PixSy.Views.Widgets {
                     var deleteMenuElement = new ToolStripMenuItem("削除");
 
                     editMenuElement.Click += (s, e) => {
+                        if (elem.PianoRoll.IsDisposed) {
+                            var notes = elem.PianoRoll.Notes;
+
+                            elem.PianoRoll = new PianoRoll();
+                            elem.PianoRoll.SetNotes(notes);
+                        }
+
                         var dialog = new PianoRollView(elem.PianoRoll);
                         dialog.Show();
                     };
@@ -182,12 +222,14 @@ namespace PixSy.Views.Widgets {
 
                     addMenuElement.Click += (s, e) => {
                         var pr = new PianoRoll();
-                        var dialog = new PianoRollView(pr);
-                        var newElem = new TrackElement(pr, _vPos + cPoint.Y / TrackHeight + 1, _hPos + cPoint.X / BarWidth + 1);
-                        
+                        var newId = _trackElements.Count == 0 ? 0 : _trackElements.Select(e => e.Id).Max() + 1;
+
+                        var newElem = new TrackElement(pr, _vPos + cPoint.Y / TrackHeight + 1, _hPos + cPoint.X / BarWidth + 1, newId);
+
                         _trackElements.Add(newElem);
                         Invalidate();
 
+                        var dialog = new PianoRollView(pr);
                         dialog.Show();
                     };
 
@@ -212,6 +254,7 @@ namespace PixSy.Views.Widgets {
             DrawTrackElements(e.Graphics);
             DrawTrackGrids(e.Graphics);
             DrawBarGrids(e.Graphics);
+            DrawPlayLine(e.Graphics);
         }
 
         private void DrawTrackGrids(Graphics g) {
@@ -244,7 +287,7 @@ namespace PixSy.Views.Widgets {
 
                 var brush = TrackElementColors[te.VPos % TrackElementColors.Length];
 
-                if (_selectedElement != null && _selectedElement.PianoRoll.Id == te.PianoRoll.Id) {
+                if (_selectedElement != null && _selectedElement.Id == te.Id) {
                     var c = ((SolidBrush)brush).Color;
                     brush = new SolidBrush(Color.FromArgb(128, c.R, c.G, c.B));
                 }
@@ -264,11 +307,18 @@ namespace PixSy.Views.Widgets {
             }
         }
 
+        private void DrawPlayLine(Graphics g) {
+            var playLineX = (int)Math.Round((BarWidth / Rhythm) * (_currentPlayHPos - _hPos));
+            g.DrawLine(new Pen(Brushes.Red) {
+                DashStyle = DashStyle.Solid
+            }, playLineX, 0, playLineX, Height);
+        }
+
         public bool TryGetTrackElementAt(Point point, out TrackElement? elem) {
             var pointHPos = _hPos + point.X / BarWidth;
             var pointVPos = _vPos + point.Y / TrackHeight;
 
-            var condition = _trackElements.Where(e => e.VPos == pointVPos && e.HPos <= pointHPos && pointHPos <= e.HPos + e.PianoRoll.GetHLength());
+            var condition = _trackElements.Where(e => e.VPos == pointVPos && e.HPos <= pointHPos && pointHPos <= e.HPos + e.PianoRoll.GetHLength() - 1);
 
             if (condition.Any()) {
                 elem = condition.First();

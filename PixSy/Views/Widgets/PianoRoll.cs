@@ -47,8 +47,8 @@ namespace PixSy.Views.Widgets {
 
         public bool IsPlaying { get; set; }
         public string Title { get; set; }
-        public int Id { get; private set; }
         public int MinimumBar { get; set; } // TODO: TrackRollとの整合性を取る
+        public Synth Synth { get; set; }
 
         private List<Note> _notes;
         private int _vPos; // 一番上のキーの高さ. 0=C5(midC=C4)
@@ -70,6 +70,7 @@ namespace PixSy.Views.Widgets {
 
         public PianoRoll() {
             InitializeComponent();
+
             SetStyle(ControlStyles.ResizeRedraw | ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
             AutoScroll = false;
 
@@ -95,16 +96,24 @@ namespace PixSy.Views.Widgets {
 
             _currentPlayHPos = 0f;
             Mode = EditMode.Select;
+
+            Synth = new Synth();
         }
 
         private void PianoRoll_MouseMove(object? sender, MouseEventArgs e) {
-            if (_selectedNote == null) {
-                return;
-            }
-
             var cPoint = PointToClient(Cursor.Position);
             var pointHPos = _hPos + cPoint.X / (float)BeatWidth;
             var pointVPos = _vPos - cPoint.Y / KeyHeight;
+
+            if (_selectedNote == null) {
+                if (e.Button == MouseButtons.Left) {
+                    _currentPlayHPos = pointHPos < 0 ? 0 : pointHPos - (pointHPos % 0.1f);
+                    Invalidate();
+                }
+
+                return;
+            }
+
             var len = _selectedNote.Length; // 先に長さを取得しておく
 
             if (_isResizing) {
@@ -170,11 +179,14 @@ namespace PixSy.Views.Widgets {
                 } else if (Mode == EditMode.Pen) {
                     var pointHPos = _hPos + cPoint.X / (float)BeatWidth;
                     var pointVPos = _vPos - cPoint.Y / KeyHeight;
-                    _selectedNote = AddNewNote(pointVPos, pointHPos);
+                    _selectedNote = AddNewNote(pointVPos, pointHPos - (pointVPos % 0.1f));
 
                     Invalidate();
                 } else {
+                    var pointHPos = _hPos + cPoint.X / (float)BeatWidth;
+
                     _selectedNote = null;
+                    _currentPlayHPos = pointHPos < 0 ? 0 : pointHPos - (pointHPos % 0.1f);
 
                     Invalidate();
                 }
@@ -199,10 +211,7 @@ namespace PixSy.Views.Widgets {
             DrawKeyboard(e.Graphics);
             DrawNotes(e.Graphics);
             DrawBeatLines(e.Graphics);
-
-            if (IsPlaying) {
-                DrawPlayLine(e.Graphics);
-            }
+            DrawPlayLine(e.Graphics);
         }
 
         private void DrawKeyboard(Graphics graphics) {
@@ -276,8 +285,10 @@ namespace PixSy.Views.Widgets {
                     noteColor = Brushes.LightBlue;
                 }
 
-                if (note.IsPlaying) {
-                    noteColor = Brushes.LightPink;
+                if (IsPlaying) {
+                    var isPlaying = note.StartF <= _currentPlayHPos && _currentPlayHPos <= note.EndF;
+                    if (isPlaying)
+                        noteColor = Brushes.LightPink;
                 }
 
                 graphics.FillRectangle(noteColor, new Rectangle(noteX, noteY, noteWidth, KeyHeight)); // TODO: Noteの色
@@ -342,11 +353,6 @@ namespace PixSy.Views.Widgets {
             _notes = notes.ToList();
         }
 
-        // TODO: 消す予定
-        public void PlaySync() {
-            _notes.OrderBy(n => n.StartF).ToList().ForEach(n => n.PlaySoundSync());
-        }
-
         public int GetHLength() {
             var max = _notes.Count == 0 ? 1 : _notes.Select(n => n.EndF).Max();
             return (int) Math.Ceiling(max / Rhythm);
@@ -354,6 +360,11 @@ namespace PixSy.Views.Widgets {
 
         private static byte VPosToKeyType(int vPos) {
             return KeyboardSequence[vPos < 0 ? (-vPos % 12 == 0 ? 0 : 12 - (-vPos) % 12) : vPos % 12]; // 12は音階の数
+        }
+
+        public List<Note> GetCurrentNotesToPlay() {
+            var notes = _notes.Where(n => n.StartF <= _currentPlayHPos && _currentPlayHPos <= n.EndF).ToList();
+            return notes;
         }
     }
 }

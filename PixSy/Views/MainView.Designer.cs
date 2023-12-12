@@ -31,6 +31,7 @@
             toolStripMenuItem2 = new ToolStripMenuItem();
             bpmToolStripMenuItem = new ToolStripMenuItem();
             rhythmToolStripMenuItem = new ToolStripMenuItem();
+            freqToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
             saveToolStripMenuItem = new ToolStripMenuItem();
@@ -55,21 +56,22 @@
             trackRoll.Dock = DockStyle.Fill;
             trackRoll.HPos = 0;
             trackRoll.IsPlaying = false;
-            trackRoll.Location = new Point(235, 40);
+            trackRoll.Location = new Point(346, 40);
             trackRoll.Name = "trackRoll";
             trackRoll.Rhythm = 4;
-            trackRoll.Size = new Size(939, 889);
+            trackRoll.Size = new Size(828, 889);
             trackRoll.TabIndex = 0;
+            trackRoll.TrackControls = null;
             trackRoll.VPos = 0;
             // 
             // toolMenuStrip
             // 
             toolMenuStrip.Dock = DockStyle.Left;
             toolMenuStrip.ImageScalingSize = new Size(32, 32);
-            toolMenuStrip.Items.AddRange(new ToolStripItem[] { playToolStripMenuItem, pauseToolStripMenuItem, stopToolStripMenuItem, toolStripMenuItem2, bpmToolStripMenuItem, rhythmToolStripMenuItem });
+            toolMenuStrip.Items.AddRange(new ToolStripItem[] { playToolStripMenuItem, pauseToolStripMenuItem, stopToolStripMenuItem, toolStripMenuItem2, bpmToolStripMenuItem, rhythmToolStripMenuItem, freqToolStripMenuItem });
             toolMenuStrip.Location = new Point(0, 40);
             toolMenuStrip.Name = "toolMenuStrip";
-            toolMenuStrip.Size = new Size(135, 889);
+            toolMenuStrip.Size = new Size(246, 889);
             toolMenuStrip.TabIndex = 2;
             toolMenuStrip.Text = "menuStrip1";
             // 
@@ -77,7 +79,7 @@
             // 
             playToolStripMenuItem.Name = "playToolStripMenuItem";
             playToolStripMenuItem.Padding = new Padding(8, 70, 8, 0);
-            playToolStripMenuItem.Size = new Size(122, 106);
+            playToolStripMenuItem.Size = new Size(233, 106);
             playToolStripMenuItem.Text = "▶";
             playToolStripMenuItem.TextDirection = ToolStripTextDirection.Horizontal;
             playToolStripMenuItem.Click += playToolStripMenuItem_Click;
@@ -86,7 +88,7 @@
             // 
             pauseToolStripMenuItem.Name = "pauseToolStripMenuItem";
             pauseToolStripMenuItem.Padding = new Padding(8, 70, 8, 0);
-            pauseToolStripMenuItem.Size = new Size(122, 106);
+            pauseToolStripMenuItem.Size = new Size(233, 106);
             pauseToolStripMenuItem.Text = "▮▮";
             pauseToolStripMenuItem.Click += pauseToolStripMenuItem_Click;
             // 
@@ -94,20 +96,20 @@
             // 
             stopToolStripMenuItem.Name = "stopToolStripMenuItem";
             stopToolStripMenuItem.Padding = new Padding(8, 70, 8, 0);
-            stopToolStripMenuItem.Size = new Size(122, 106);
+            stopToolStripMenuItem.Size = new Size(233, 106);
             stopToolStripMenuItem.Text = "■";
             stopToolStripMenuItem.Click += stopToolStripMenuItem_Click;
             // 
             // toolStripMenuItem2
             // 
             toolStripMenuItem2.Name = "toolStripMenuItem2";
-            toolStripMenuItem2.Size = new Size(122, 4);
+            toolStripMenuItem2.Size = new Size(233, 4);
             // 
             // bpmToolStripMenuItem
             // 
             bpmToolStripMenuItem.Name = "bpmToolStripMenuItem";
             bpmToolStripMenuItem.Padding = new Padding(8, 50, 8, 0);
-            bpmToolStripMenuItem.Size = new Size(122, 86);
+            bpmToolStripMenuItem.Size = new Size(233, 86);
             bpmToolStripMenuItem.Text = "120 BPM";
             bpmToolStripMenuItem.Click += bpmToolStripMenuItem_Click;
             // 
@@ -115,9 +117,17 @@
             // 
             rhythmToolStripMenuItem.Name = "rhythmToolStripMenuItem";
             rhythmToolStripMenuItem.Padding = new Padding(8, 50, 8, 0);
-            rhythmToolStripMenuItem.Size = new Size(122, 86);
+            rhythmToolStripMenuItem.Size = new Size(233, 86);
             rhythmToolStripMenuItem.Text = "4拍子";
             rhythmToolStripMenuItem.Click += rhythmToolStripMenuItem_Click;
+            // 
+            // freqToolStripMenuItem
+            // 
+            freqToolStripMenuItem.Name = "freqToolStripMenuItem";
+            freqToolStripMenuItem.Padding = new Padding(8, 50, 8, 0);
+            freqToolStripMenuItem.Size = new Size(233, 86);
+            freqToolStripMenuItem.Text = "440.00Hz";
+            freqToolStripMenuItem.Click += freqToolStripMenuItem_Click;
             // 
             // menuStrip1
             // 
@@ -198,7 +208,7 @@
             // trackControls
             // 
             trackControls.Dock = DockStyle.Left;
-            trackControls.Location = new Point(135, 40);
+            trackControls.Location = new Point(246, 40);
             trackControls.Name = "trackControls";
             trackControls.Size = new Size(100, 889);
             trackControls.TabIndex = 5;
@@ -247,5 +257,6 @@
         private TabPage soundsMenu;
         private Widgets.SynthsPanel synthsPanel;
         private Widgets.TrackControls trackControls;
+        private ToolStripMenuItem freqToolStripMenuItem;
     }
 }

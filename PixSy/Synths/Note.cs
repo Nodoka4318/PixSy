@@ -36,10 +36,11 @@ namespace PixSy.Synths {
         public float StartF { get; set; }
         public float EndF { get; set; }
 
+        public static float Tuning = 440f; // A4
+
         private int _id;
 
         public static readonly string[] PitchNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-        const float Tuning = 440f; // A4
 
         public Note(string pitch, float length, float start, float end, PianoRoll? parent = null) {
             throw new NotImplementedException();

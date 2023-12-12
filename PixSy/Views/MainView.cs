@@ -20,6 +20,7 @@ namespace PixSy.Views {
 
         private int _bpm = 120;
         private int _rhythm = 4;
+        private float _frequency = 440.00f;
         private Timer _playTimer;
         private List<Note> _playingNotes;
 
@@ -140,6 +141,29 @@ namespace PixSy.Views {
                     }
                 } else {
                     MessageBox.Show("拍子の設定に失敗しました。", "PixSy", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void freqToolStripMenuItem_Click(object sender, EventArgs e) {
+            using (var dlg = new InputBox()) {
+                dlg.Text = "チューニングを設定";
+                dlg.InputText = _frequency.ToString("F2");
+                dlg.ShowDialog();
+
+                float freq;
+
+                if (float.TryParse(dlg.InputText, out freq)) {
+                    if (!(freq < 1.00f || freq > 999.99f)) {
+                        _frequency = freq;
+                        freqToolStripMenuItem.Text = $"{_frequency.ToString("F2")}Hz";
+
+                        Note.Tuning = _frequency;
+                    } else {
+                        MessageBox.Show("チューニング周波数は1.00から999.99の範囲で設定してください。", "PixSy", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                } else {
+                    MessageBox.Show("チューニング周波数の設定に失敗しました。", "PixSy", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }

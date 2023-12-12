@@ -38,19 +38,27 @@
             createNewToolStripMenuItem = new ToolStripMenuItem();
             openProjectToolStripMenuItem = new ToolStripMenuItem();
             editToolStripMenuItem = new ToolStripMenuItem();
+            rightTabControl = new TabControl();
+            soundsMenu = new TabPage();
+            synthsPanel = new Widgets.SynthsPanel();
+            trackControls = new Widgets.TrackControls();
             toolMenuStrip.SuspendLayout();
             menuStrip1.SuspendLayout();
+            rightTabControl.SuspendLayout();
+            soundsMenu.SuspendLayout();
             SuspendLayout();
             // 
             // trackRoll
             // 
             trackRoll.BackColor = Color.LightGray;
+            trackRoll.CurrentPlayHPos = 0F;
             trackRoll.Dock = DockStyle.Fill;
             trackRoll.HPos = 0;
             trackRoll.IsPlaying = false;
-            trackRoll.Location = new Point(135, 40);
+            trackRoll.Location = new Point(235, 40);
             trackRoll.Name = "trackRoll";
-            trackRoll.Size = new Size(1439, 889);
+            trackRoll.Rhythm = 4;
+            trackRoll.Size = new Size(939, 889);
             trackRoll.TabIndex = 0;
             trackRoll.VPos = 0;
             // 
@@ -158,12 +166,52 @@
             editToolStripMenuItem.Size = new Size(82, 36);
             editToolStripMenuItem.Text = "編集";
             // 
+            // rightTabControl
+            // 
+            rightTabControl.Controls.Add(soundsMenu);
+            rightTabControl.Dock = DockStyle.Right;
+            rightTabControl.Location = new Point(1174, 40);
+            rightTabControl.Name = "rightTabControl";
+            rightTabControl.SelectedIndex = 0;
+            rightTabControl.Size = new Size(400, 889);
+            rightTabControl.TabIndex = 4;
+            // 
+            // soundsMenu
+            // 
+            soundsMenu.Controls.Add(synthsPanel);
+            soundsMenu.Location = new Point(8, 46);
+            soundsMenu.Name = "soundsMenu";
+            soundsMenu.Padding = new Padding(3);
+            soundsMenu.Size = new Size(384, 835);
+            soundsMenu.TabIndex = 0;
+            soundsMenu.Text = "Synths";
+            soundsMenu.UseVisualStyleBackColor = true;
+            // 
+            // synthsPanel
+            // 
+            synthsPanel.Dock = DockStyle.Fill;
+            synthsPanel.Location = new Point(3, 3);
+            synthsPanel.Name = "synthsPanel";
+            synthsPanel.Size = new Size(378, 829);
+            synthsPanel.TabIndex = 0;
+            // 
+            // trackControls
+            // 
+            trackControls.Dock = DockStyle.Left;
+            trackControls.Location = new Point(135, 40);
+            trackControls.Name = "trackControls";
+            trackControls.Size = new Size(100, 889);
+            trackControls.TabIndex = 5;
+            trackControls.VPos = 0;
+            // 
             // MainView
             // 
             AutoScaleDimensions = new SizeF(13F, 32F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1574, 929);
             Controls.Add(trackRoll);
+            Controls.Add(trackControls);
+            Controls.Add(rightTabControl);
             Controls.Add(toolMenuStrip);
             Controls.Add(menuStrip1);
             Name = "MainView";
@@ -172,6 +220,8 @@
             toolMenuStrip.PerformLayout();
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
+            rightTabControl.ResumeLayout(false);
+            soundsMenu.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
         }
@@ -193,5 +243,9 @@
         private ToolStripMenuItem editToolStripMenuItem;
         private ToolStripMenuItem bpmToolStripMenuItem;
         private ToolStripMenuItem rhythmToolStripMenuItem;
+        private TabControl rightTabControl;
+        private TabPage soundsMenu;
+        private Widgets.SynthsPanel synthsPanel;
+        private Widgets.TrackControls trackControls;
     }
 }

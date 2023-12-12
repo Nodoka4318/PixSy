@@ -14,9 +14,12 @@ using Timer = PixSy.Threading.Timer;
 
 namespace PixSy.Views {
     public partial class MainView : Form {
+        public List<Synth> Synths => synthsPanel.Synths;
+        public List<TrackRoll.TrackElement> TrackElements => trackRoll.TrackElements;
+        public TrackControls TrackControls => trackControls;
+
         private int _bpm = 120;
         private int _rhythm = 4;
-
         private Timer _playTimer;
         private List<Note> _playingNotes;
 
@@ -24,6 +27,8 @@ namespace PixSy.Views {
             InitializeComponent();
 
             Text = $"{PixSyAppInfo.AppName} ({PixSyAppInfo.Version})";
+            trackControls.Width = TrackRoll.TrackHeight;
+            trackRoll.TrackControls = trackControls;
 
             _playTimer = new Timer();
             _playingNotes = new List<Note>();
@@ -34,7 +39,18 @@ namespace PixSy.Views {
 
         private void _playTimer_Tick(object? sender, EventArgs e) {
             var currentNotes = new List<Note>();
-            var currentNoteLists = trackRoll.TrackElements.Select(e => e.PianoRoll.GetCurrentNotesToPlay());
+            IEnumerable<List<Note>> currentNoteLists;
+
+            if (TrackControls.TrackControlPanels.Exists(p => p.IsSolo)) {
+                currentNoteLists = trackRoll.TrackElements
+                    .Where(e => e.PianoRoll.TrackControl.IsSolo)
+                    .Select(e => e.PianoRoll.GetCurrentNotesToPlay());
+            } else {
+                currentNoteLists = trackRoll.TrackElements
+                    .Where(e => !e.PianoRoll.TrackControl.IsMute)
+                    .Select(e => e.PianoRoll.GetCurrentNotesToPlay());
+            }
+
             foreach (var l in currentNoteLists) {
                 currentNotes.AddRange(l);
             }
@@ -73,7 +89,13 @@ namespace PixSy.Views {
         }
 
         private void stopToolStripMenuItem_Click(object sender, EventArgs e) {
+            if (_playTimer.Enabled) {
+                trackRoll.IsPlaying = false;
+                _playTimer.Stop();
+            }
 
+            trackRoll.TrackElements.ForEach(e => e.PianoRoll.IsPlaying = false);
+            trackRoll.CurrentPlayHPos = 0;
         }
 
         private void bpmToolStripMenuItem_Click(object sender, EventArgs e) {
@@ -83,7 +105,7 @@ namespace PixSy.Views {
                 dlg.ShowDialog();
 
                 int bpm;
-                
+
                 if (int.TryParse(dlg.InputText, out bpm)) {
                     if (!(bpm < 1 || bpm > 375)) {
                         _bpm = bpm;

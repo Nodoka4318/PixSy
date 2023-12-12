@@ -15,8 +15,26 @@ namespace PixSy.Views.Widgets {
     public partial class TrackRoll : UserControl {
         public class TrackElement {
             public PianoRoll PianoRoll { get; set; }
-            public int TrackNumber { get; set; }
-            public int StartBar { get; set; }
+            public int TrackNumber {
+                get => _trackNumber;
+                set {
+                    _trackNumber = value;
+
+                    TrackControlPanel? ctrl;
+                    if (TryGetTrackControl(out ctrl)) {
+                        PianoRoll.TrackControl = ctrl;
+                    }
+                }
+            }
+
+            public int StartBar {
+                get => _startBar;
+                set {
+                    _startBar = value;
+                    PianoRoll.MinimumBar = _startBar;
+                }
+            }
+
             public int Id { get; set; }
             public int VPos {
                 get => TrackNumber - 1; // 座標ではなくトラック番号で管理したいので
@@ -32,11 +50,26 @@ namespace PixSy.Views.Widgets {
                 }
             }
 
+            private int _startBar;
+            private int _trackNumber;
+
             public TrackElement(PianoRoll pianoRoll, int trackNumber, int startBar, int id) {
                 PianoRoll = pianoRoll;
                 TrackNumber = trackNumber;
                 StartBar = startBar;
                 Id = id;
+            }
+
+            public bool TryGetTrackControl(out TrackControlPanel? ctrl) {
+                var cs = PixSyApp.MainView.TrackControls.TrackControlPanels.Where(p => p.TrackNumber == _trackNumber);
+                
+                if (cs.Any()) {
+                    ctrl = cs.First();
+                    return true;
+                } else {
+                    ctrl = null;
+                    return false;
+                }
             }
         }
 
@@ -56,6 +89,9 @@ namespace PixSy.Views.Widgets {
                 _vPos = value;
                 vScrollBar.Value = value;
 
+                if (TrackControls != null) {
+                    TrackControls.VPos = value;
+                }
                 Invalidate();
             }
         }
@@ -93,6 +129,8 @@ namespace PixSy.Views.Widgets {
             }
         }
 
+        public TrackControls TrackControls { get; set; }
+
         private List<TrackElement> _trackElements;
         private int _hPos;
         private int _vPos; // 一番上が0
@@ -103,8 +141,8 @@ namespace PixSy.Views.Widgets {
         private float _currentPlayHPos; // 再生中の位置
         private int _rhythm;
 
-        private readonly int TrackHeight = 80; // トラックの高さ
-        private readonly int BarWidth = 120; // 小節の幅
+        public const int TrackHeight = 80; // トラックの高さ
+        private const int BarWidth = 120; // 小節の幅
         private readonly Brush[] TrackElementColors = new Brush[] {
             Brushes.Aquamarine,
             Brushes.Coral,
@@ -211,6 +249,12 @@ namespace PixSy.Views.Widgets {
                             elem.PianoRoll = new PianoRoll();
                             elem.PianoRoll.SetNotes(notes);
                             elem.PianoRoll.Rhythm = _rhythm;
+                            elem.PianoRoll.MinimumBar = elem.StartBar;
+
+                            TrackControlPanel? ctrl;
+                            if (elem.TryGetTrackControl(out ctrl)) {
+                                elem.PianoRoll.TrackControl = ctrl;
+                            }
                         }
 
                         var dialog = new PianoRollView(elem.PianoRoll);

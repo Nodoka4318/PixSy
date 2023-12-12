@@ -8,7 +8,28 @@ using System.Threading.Tasks;
 
 namespace PixSy.Synths {
     public class Synth {
+        public static readonly Synth DefaultSynth = new Synth("Default");
+
+        public string Name { get; set; }
+        public string Id { get; private set; }
+        public SignalGeneratorType Type { get; set; } // とりあえず仮
+
         const int _adjustMilSec = 0; // adjust miliseconds
+
+        public Synth() {
+            Name = "MySynth";
+            Id = Guid.NewGuid().ToString();
+
+            Type = SignalGeneratorType.Sin;
+        }
+
+        public Synth(string name) : this() {
+            Name = name;
+        }
+
+        public Synth(string name, string id) : this(name) {
+            Id = id;
+        }
 
         public static void PlaySoundByte(byte[] soundByte) {
             WaveOut waveOut = new WaveOut();
@@ -39,7 +60,7 @@ namespace PixSy.Synths {
             return new SignalGenerator() {
                 Gain = 0.2,
                 Frequency = frequency,
-                Type = SignalGeneratorType.Triangle
+                Type = Type
             }.Take(TimeSpan.FromMilliseconds((int) (second * 1000) + _adjustMilSec));
         }
 
@@ -52,6 +73,10 @@ namespace PixSy.Synths {
                     await Task.Delay(100);
                 }
             }
+        }
+
+        public override string ToString() {
+            return Name;
         }
     }
 }

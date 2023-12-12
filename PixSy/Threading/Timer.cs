@@ -30,10 +30,6 @@ namespace PixSy.Threading {
         private volatile bool _running = false;
         private event EventHandler? _tick;
 
-        public Timer() {
-            
-        }
-
         public void Start(DateTime startAt) {
             _running = true;
             Task.Run(() => {

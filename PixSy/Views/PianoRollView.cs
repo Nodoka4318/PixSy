@@ -11,13 +11,14 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using PixSy.Synths;
+using Timer = PixSy.Threading.Timer;
 
 namespace PixSy.Views {
     public partial class PianoRollView : Form {
         public PianoRoll PianoRoll => pianoRoll;
         public int Bpm { get; set; }
 
-        private System.Windows.Forms.Timer _playTimer;
+        private Timer _playTimer;
         private List<Note> _playingNotes;
 
         public PianoRollView(PianoRoll pianoRoll) {
@@ -26,7 +27,7 @@ namespace PixSy.Views {
             selectToolStripMenuItem.Checked = true;
             Bpm = 120;
 
-            _playTimer = new System.Windows.Forms.Timer();
+            _playTimer = new Timer();
             _playingNotes = new List<Note>();
 
             _playTimer.Interval = (int) (60f / (float) Bpm * 100f);
@@ -80,7 +81,7 @@ namespace PixSy.Views {
                 pianoRoll.IsPlaying = false;
                 playToolStripMenuItem.Text = "再生";
             } else {
-                _playTimer.Start();
+                _playTimer.Start(DateTime.Now);
                 pianoRoll.IsPlaying = true;
                 playToolStripMenuItem.Text = "一時停止";
             }

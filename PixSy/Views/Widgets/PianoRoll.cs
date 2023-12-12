@@ -13,6 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.AxHost;
 
 namespace PixSy.Views.Widgets {
     public partial class PianoRoll : UserControl {
@@ -39,8 +40,21 @@ namespace PixSy.Views.Widgets {
                     SetHPos(hPos);
 
                     if (hPos + 16 > hScrollBar.Maximum) {
-                        hScrollBar.Maximum = hPos + 16;
+                        if (hScrollBar.InvokeRequired) {
+                            hScrollBar.Invoke(new Action(() => hScrollBar.Maximum = hPos + 16));
+                        } else {
+                            hScrollBar.Maximum = hPos + 16;
+                        }
                     }
+
+                    if (hScrollBar.InvokeRequired) {
+                        hScrollBar.Invoke(new Action(() => hScrollBar.Value = hPos));
+                    } else {
+                        hScrollBar.Value = hPos;
+                    }
+                } else if (_currentPlayHPos >= 0 && _currentPlayHPos < _hPos) {
+                    var hPos = (int)Math.Floor(_currentPlayHPos);
+                    SetHPos(hPos);
 
                     if (hScrollBar.InvokeRequired) {
                         hScrollBar.Invoke(new Action(() => hScrollBar.Value = hPos));
@@ -58,8 +72,22 @@ namespace PixSy.Views.Widgets {
 
         public bool IsPlaying { get; set; }
         public string Title { get; set; }
-        public int MinimumBar { get; set; } // TODO: TrackRollとの整合性を取る
-        public Synth Synth { get; set; }
+        public int MinimumBar {
+            get => _minimumBar;
+            set {
+                _minimumBar = value;
+                Invalidate();
+            }
+        }
+
+        public Synth Synth { get; private set; }
+        public TrackControlPanel TrackControl {
+            get => _trackControl;
+            set {
+                _trackControl = value;
+                Synth = _trackControl.Synth;
+            }
+        }
 
         private List<Note> _notes;
         private int _vPos; // 一番上のキーの高さ. 0=C5(midC=C4)
@@ -71,6 +99,8 @@ namespace PixSy.Views.Widgets {
         private float _dragOffset; // ドラッグ開始時の音符とマウスの差分
         private float _currentPlayHPos; // 再生中の位置
         private int _rhythm;
+        private int _minimumBar;
+        private TrackControlPanel _trackControl;
 
         static readonly Color WhiteKeyColor = Color.Gainsboro;
         static readonly Color BlackKeyColor = Color.DarkGray;
@@ -255,7 +285,7 @@ namespace PixSy.Views.Widgets {
 
                 if (currentPos % Rhythm == 0) {
                     dashStyle = DashStyle.Solid; // 小節の頭は実線
-                    graphics.DrawString($"{currentPos / Rhythm + 1}", new Font(FontFamily.GenericSansSerif, KeyHeight - 4), Brushes.Black, i * BeatWidth, 0); // 小節番号
+                    graphics.DrawString($"{currentPos / Rhythm +  1 + (MinimumBar - 1)}", new Font(FontFamily.GenericSansSerif, KeyHeight - 4), Brushes.Black, i * BeatWidth, 0); // 小節番号
                 }
 
                 graphics.DrawLine(new Pen(Brushes.Black) {
@@ -286,7 +316,14 @@ namespace PixSy.Views.Widgets {
                 var noteX = (int)Math.Round(BeatWidth * (note.StartF - _hPos));
                 var noteY = (int)Math.Round((double)KeyHeight * (_vPos - note.VPos));
                 var noteWidth = (int)Math.Round(BeatWidth * (note.EndF - note.StartF));
-                var noteColor = Brushes.Aqua;
+                var baseColor = ((SolidBrush)Brushes.Aqua).Color;
+
+                int mG = (int)(baseColor.G - (note.StartF % Rhythm) *  10);
+                int mB = (int)(baseColor.B - (note.StartF % Rhythm) * 20);
+                mG = Math.Max(0, Math.Min(255, mB));
+                mB = Math.Max(0, Math.Min(255, mG));
+
+                var noteColor = new SolidBrush(Color.FromArgb(baseColor.R, mG, mB));
 
                 if (_hPos >= note.StartF) {
                     noteX = 0;
@@ -294,13 +331,13 @@ namespace PixSy.Views.Widgets {
                 }
 
                 if (note.Equals(_selectedNote)) {
-                    noteColor = Brushes.LightBlue;
+                    noteColor = (SolidBrush)Brushes.LightBlue;
                 }
 
                 if (IsPlaying) {
                     var isPlaying = note.StartF <= _currentPlayHPos && _currentPlayHPos <= note.EndF;
                     if (isPlaying)
-                        noteColor = Brushes.LightPink;
+                        noteColor = (SolidBrush)Brushes.LightPink;
                 }
 
                 graphics.FillRectangle(noteColor, new Rectangle(noteX, noteY, noteWidth, KeyHeight)); // TODO: Noteの色
@@ -363,6 +400,7 @@ namespace PixSy.Views.Widgets {
 
         public void SetNotes(IEnumerable<Note> notes) {
             _notes = notes.ToList();
+            _notes.ForEach(n => n.Parent = this);
         }
 
         public int GetHLength() {

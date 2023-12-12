@@ -17,7 +17,7 @@ namespace PixSy.Synths {
         }
         public int Id { get => _id; }
         public bool IsPlaying { get; set; }
-        public PianoRoll? Parent { get; private set; }
+        public PianoRoll? Parent { get; set; }
 
         /// <summary>
         /// C4=0

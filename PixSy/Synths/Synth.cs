@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace PixSy.Synths {
     public class Synth {
-        const int _adjustMilSec = 50; // adjust miliseconds
+        const int _adjustMilSec = 0; // adjust miliseconds
 
         public static void PlaySoundByte(byte[] soundByte) {
             WaveOut waveOut = new WaveOut();

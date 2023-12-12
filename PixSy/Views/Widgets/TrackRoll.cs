@@ -61,7 +61,14 @@ namespace PixSy.Views.Widgets {
         }
 
         public bool IsPlaying { get; set; }
-        public int Rhythm => 4; // TODO: 一般化
+        public int Rhythm {
+            get => _rhythm;
+            set {
+                _rhythm = value;
+                _trackElements.ForEach(e => e.PianoRoll.Rhythm = value);
+            }
+        }
+
         public List<TrackElement> TrackElements => _trackElements;
         public float CurrentPlayHPos {
             get => _currentPlayHPos;
@@ -94,6 +101,7 @@ namespace PixSy.Views.Widgets {
         private TrackElement? _selectedElement;
         private System.Windows.Forms.Timer _mainTimer;
         private float _currentPlayHPos; // 再生中の位置
+        private int _rhythm;
 
         private readonly int TrackHeight = 80; // トラックの高さ
         private readonly int BarWidth = 120; // 小節の幅
@@ -116,6 +124,7 @@ namespace PixSy.Views.Widgets {
 
             _trackElements = new List<TrackElement>();
             _currentPlayHPos = 0;
+            _rhythm = 4;
 
             vScrollBar.ValueChanged += VScrollBar_ValueChanged;
             hScrollBar.ValueChanged += HScrollBar_ValueChanged;
@@ -201,6 +210,7 @@ namespace PixSy.Views.Widgets {
 
                             elem.PianoRoll = new PianoRoll();
                             elem.PianoRoll.SetNotes(notes);
+                            elem.PianoRoll.Rhythm = _rhythm;
                         }
 
                         var dialog = new PianoRollView(elem.PianoRoll);
@@ -222,6 +232,8 @@ namespace PixSy.Views.Widgets {
 
                     addMenuElement.Click += (s, e) => {
                         var pr = new PianoRoll();
+                        pr.Rhythm = _rhythm;
+
                         var newId = _trackElements.Count == 0 ? 0 : _trackElements.Select(e => e.Id).Max() + 1;
 
                         var newElem = new TrackElement(pr, _vPos + cPoint.Y / TrackHeight + 1, _hPos + cPoint.X / BarWidth + 1, newId);

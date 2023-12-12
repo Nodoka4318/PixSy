@@ -20,7 +20,14 @@ namespace PixSy.Views.Widgets {
             Select, Pen
         }
 
-        public int Rhythm { get => 4; } // 拍子
+        public int Rhythm { 
+            get => _rhythm; 
+            set {
+                _rhythm = value;
+                Invalidate();
+            }
+        } // 拍子
+
         public int NextNoteId => _notes.Count == 0 ? 0 : _notes.Select(n => n.Id).Max() + 1;
         public float CurrentPlayHPos {
             get => _currentPlayHPos;
@@ -35,7 +42,11 @@ namespace PixSy.Views.Widgets {
                         hScrollBar.Maximum = hPos + 16;
                     }
 
-                    hScrollBar.Value = hPos;
+                    if (hScrollBar.InvokeRequired) {
+                        hScrollBar.Invoke(new Action(() => hScrollBar.Value = hPos));
+                    } else {
+                        hScrollBar.Value = hPos;
+                    }
                 }
 
                 Invalidate();
@@ -59,6 +70,7 @@ namespace PixSy.Views.Widgets {
         private byte _draggingEdge = 0; // 0: なし, 1: 左, 2: 右
         private float _dragOffset; // ドラッグ開始時の音符とマウスの差分
         private float _currentPlayHPos; // 再生中の位置
+        private int _rhythm;
 
         static readonly Color WhiteKeyColor = Color.Gainsboro;
         static readonly Color BlackKeyColor = Color.DarkGray;

@@ -4,18 +4,20 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Timer = PixSy.Threading.Timer;
 
 namespace PixSy.Views {
     public partial class MainView : Form {
         private int _bpm = 120;
         private int _rhythm = 4;
 
-        private System.Windows.Forms.Timer _playTimer;
+        private Timer _playTimer;
         private List<Note> _playingNotes;
 
         public MainView() {
@@ -23,7 +25,7 @@ namespace PixSy.Views {
 
             Text = $"{PixSyAppInfo.AppName} ({PixSyAppInfo.Version})";
 
-            _playTimer = new System.Windows.Forms.Timer();
+            _playTimer = new Timer();
             _playingNotes = new List<Note>();
 
             _playTimer.Interval = (int)(60f / (float)_bpm * 100f);
@@ -57,7 +59,7 @@ namespace PixSy.Views {
 
             if (!_playTimer.Enabled) {
                 trackRoll.IsPlaying = true;
-                _playTimer.Start();
+                _playTimer.Start(DateTime.Now);
             }
         }
 
@@ -83,11 +85,13 @@ namespace PixSy.Views {
                 int bpm;
                 
                 if (int.TryParse(dlg.InputText, out bpm)) {
-                    if (!(bpm < 1 || bpm > 999)) {
+                    if (!(bpm < 1 || bpm > 375)) {
                         _bpm = bpm;
                         bpmToolStripMenuItem.Text = $"{_bpm} BPM";
+
+                        _playTimer.Interval = (int)(60f / (float)_bpm * 100f);
                     } else {
-                        MessageBox.Show("BPMは1から999の範囲で設定してください。", "PixSy", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show("BPMは1から375の範囲で設定してください。", "PixSy", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 } else {
                     MessageBox.Show("BPMの設定に失敗しました。", "PixSy", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -107,6 +111,8 @@ namespace PixSy.Views {
                     if (!(rhythm < 1 || rhythm > 999)) {
                         _rhythm = rhythm;
                         rhythmToolStripMenuItem.Text = $"{_rhythm}拍子";
+
+                        trackRoll.Rhythm = _rhythm;
                     } else {
                         MessageBox.Show("拍子は1から999の範囲で設定してください。", "PixSy", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }

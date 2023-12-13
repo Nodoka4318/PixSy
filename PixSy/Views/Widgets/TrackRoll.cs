@@ -1,4 +1,5 @@
-﻿using PixSy.Synths;
+﻿using PixSy.IO.Save;
+using PixSy.Synths;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -383,6 +384,38 @@ namespace PixSy.Views.Widgets {
                 elem = null;
                 return false;
             }
+        }
+
+        public void AddNewTrackElement(List<Note> notes, int trackNumber, int startBar) {
+            var pr = new PianoRoll();
+            pr.SetNotes(notes);
+            pr.Rhythm = _rhythm;
+
+            var newId = _trackElements.Count == 0 ? 0 : _trackElements.Select(e => e.Id).Max() + 1;
+            var te = new TrackElement(pr, trackNumber, startBar, newId);
+
+            TrackControlPanel ? ctrl;
+            if (te.TryGetTrackControl(out ctrl)) {
+                pr.TrackControl = ctrl;
+            }
+
+            Invalidate();
+        }
+
+        public void AddNewTrackElement(List<WrapperNote> notes, int trackNumber, int startBar) {
+            var pr = new PianoRoll();
+            notes.ForEach(n => pr.AddNewNote(n.VPos, n.StartF, n.EndF));
+            pr.Rhythm = _rhythm;
+
+            var newId = _trackElements.Count == 0 ? 0 : _trackElements.Select(e => e.Id).Max() + 1;
+            var te = new TrackElement(pr, trackNumber, startBar, newId);
+
+            TrackControlPanel? ctrl;
+            if (te.TryGetTrackControl(out ctrl)) {
+                pr.TrackControl = ctrl;
+            }
+
+            Invalidate();
         }
     }
 }

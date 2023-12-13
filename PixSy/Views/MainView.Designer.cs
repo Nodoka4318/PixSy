@@ -157,6 +157,7 @@
             saveNewToolStripMenuItem.Name = "saveNewToolStripMenuItem";
             saveNewToolStripMenuItem.Size = new Size(376, 44);
             saveNewToolStripMenuItem.Text = "名前を付けて保存";
+            saveNewToolStripMenuItem.Click += saveNewToolStripMenuItem_Click;
             // 
             // createNewToolStripMenuItem
             // 
@@ -169,6 +170,7 @@
             openProjectToolStripMenuItem.Name = "openProjectToolStripMenuItem";
             openProjectToolStripMenuItem.Size = new Size(376, 44);
             openProjectToolStripMenuItem.Text = "プロジェクトを開く";
+            openProjectToolStripMenuItem.Click += openProjectToolStripMenuItem_Click;
             // 
             // editToolStripMenuItem
             // 

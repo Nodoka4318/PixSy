@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace PixSy.Synths {
     public class Synth {
-        public static readonly Synth DefaultSynth = new Synth("Default");
+        public static readonly Synth DefaultSynth = new Synth("Default") { Id = Guid.Empty.ToString() };
 
         public string Name { get; set; }
         public string Id { get; private set; }

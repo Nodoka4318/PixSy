@@ -384,11 +384,15 @@ namespace PixSy.Views.Widgets {
         }
 
         public Note AddNewNote(int vPos, float hPos) {
-            var newNote = new Note(vPos, hPos, hPos + 1, NextNoteId, this);
+            return AddNewNote(vPos, hPos, hPos + 1);
+        }
+
+        public Note AddNewNote(int vPos, float startF, float endF) {
+            var newNote = new Note(vPos, startF, endF, NextNoteId, this);
             _notes.Add(newNote);
 
-            if (hPos + 16 > hScrollBar.Maximum) {
-                hScrollBar.Maximum = (int)Math.Ceiling(hPos + 16);
+            if (endF + 16 > hScrollBar.Maximum) {
+                hScrollBar.Maximum = (int)Math.Ceiling(endF + 16);
             }
 
             return newNote;

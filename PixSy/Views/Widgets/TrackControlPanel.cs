@@ -18,7 +18,12 @@ namespace PixSy.Views.Widgets {
         public Synth Synth {
             get => _synth;
             set {
-                _synth = value;
+                if (value != null) {
+                    _synth = value;
+                } else {
+                    _synth = Synth.DefaultSynth;
+                }
+
                 synthButton.Text = _synth.Name;
 
                 var tElems = PixSyApp.MainView.TrackElements.Where(e => e.TrackNumber == TrackNumber);

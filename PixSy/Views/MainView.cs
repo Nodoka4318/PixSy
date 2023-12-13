@@ -1,4 +1,5 @@
-﻿using PixSy.Synths;
+﻿using PixSy.IO.Save;
+using PixSy.Synths;
 using PixSy.Views.Widgets;
 using System;
 using System.Collections.Generic;
@@ -164,6 +165,78 @@ namespace PixSy.Views {
                     }
                 } else {
                     MessageBox.Show("チューニング周波数の設定に失敗しました。", "PixSy", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void saveNewToolStripMenuItem_Click(object sender, EventArgs e) {
+            using (var dlg = new SaveFileDialog()) {
+                dlg.Filter = "PixSyプロジェクトファイル|*.pixsy";
+                dlg.Title = "名前を付けて保存";
+
+                if (dlg.ShowDialog() == DialogResult.OK) {
+                    var saveData = new ImplSaveData() {
+                        bpm = _bpm,
+                        rhythm = _rhythm,
+                        tuningFrequency = _frequency,
+                        synths = Synths.Select(s => WrapperSynth.Wrap(s)).ToList(),
+                        trackNodes = TrackElements.Select(e => new TrackNode() {
+                            Notes = e.PianoRoll.Notes.Select(n => WrapperNote.Wrap(n)).ToList(),
+                            StartBar = e.StartBar,
+                            TrackNumber = e.TrackNumber
+                        }).ToList(),
+
+                        trackStates = TrackControls.TrackControlPanels.Select(c => new TrackState() {
+                            TrackNumber = c.TrackNumber,
+                            SynthId = c.Synth.Id,
+                            IsSolo = c.IsSolo,
+                            IsMute = c.IsMute
+                        }).ToList()
+
+
+                    };
+
+                    SaveManager.Save(dlg.FileName, saveData);
+                }
+            }
+        }
+
+        private void openProjectToolStripMenuItem_Click(object sender, EventArgs e) {
+            using (var dlg = new OpenFileDialog()) {
+                dlg.Filter = "PixSyプロジェクトファイル|*.pixsy";
+                dlg.Title = "プロジェクトを開く";
+
+                if (dlg.ShowDialog() == DialogResult.OK) {
+                    var saveData = SaveManager.Load(dlg.FileName);
+
+                    if (saveData != null) {
+                        _bpm = saveData.GetBpm();
+                        _rhythm = saveData.GetRhythm();
+                        _frequency = saveData.GetTuningFrequency();
+
+                        bpmToolStripMenuItem.Text = $"{_bpm} BPM";
+                        rhythmToolStripMenuItem.Text = $"{_rhythm}拍子";
+                        freqToolStripMenuItem.Text = $"{_frequency.ToString("F2")}Hz";
+
+                        Synths.Clear();
+                        Synths.AddRange(saveData.GetSynths().Select(s => s.GetSynth()));
+
+                        saveData.GetTrackStates().OrderBy(s => s.TrackNumber).ToList().ForEach(s => {
+                            trackControls.TrackControlPanels.Clear();
+                            trackControls.TrackControlPanels.Add(new TrackControlPanel() {
+                                Synth = Synths.FirstOrDefault(sy => sy.Id == s.SynthId),
+                                IsMute = s.IsMute,
+                                IsSolo = s.IsSolo
+                            });
+                        });
+
+                        trackRoll.TrackElements.Clear();
+                        saveData.GetTrackNodes().ForEach(n => {
+                            trackRoll.AddNewTrackElement(n.Notes, n.TrackNumber, n.StartBar);
+                        });
+
+                        trackRoll.Rhythm = _rhythm;
+                    }
                 }
             }
         }

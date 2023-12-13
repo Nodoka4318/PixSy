@@ -399,6 +399,8 @@ namespace PixSy.Views.Widgets {
                 pr.TrackControl = ctrl;
             }
 
+            _trackElements.Add(te);
+
             Invalidate();
         }
 
@@ -414,6 +416,8 @@ namespace PixSy.Views.Widgets {
             if (te.TryGetTrackControl(out ctrl)) {
                 pr.TrackControl = ctrl;
             }
+
+            _trackElements.Add(te);
 
             Invalidate();
         }

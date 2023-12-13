@@ -32,7 +32,7 @@ namespace PixSy.Views.Widgets {
             _trackControlPanels = new List<TrackControlPanel>();
         }
 
-        private void Init() {
+        public void Init() {
             Controls.Clear();
 
             var trackHeight = TrackRoll.TrackHeight;
@@ -61,6 +61,14 @@ namespace PixSy.Views.Widgets {
                     break;
                 }
             }
+        }
+
+        public void Clear() {
+            _trackControlPanels.Clear();
+        }
+
+        public void Add(TrackControlPanel panel) {
+            _trackControlPanels.Add(panel);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using PixSy.IO.Save;
+﻿using NAudio.Midi;
+using PixSy.IO.Save;
 using PixSy.Synths;
 using PixSy.Views.Widgets;
 using System;
@@ -221,21 +222,26 @@ namespace PixSy.Views {
                         Synths.Clear();
                         Synths.AddRange(saveData.GetSynths().Select(s => s.GetSynth()));
 
-                        saveData.GetTrackStates().OrderBy(s => s.TrackNumber).ToList().ForEach(s => {
-                            trackControls.TrackControlPanels.Clear();
-                            trackControls.TrackControlPanels.Add(new TrackControlPanel() {
-                                Synth = Synths.FirstOrDefault(sy => sy.Id == s.SynthId),
-                                IsMute = s.IsMute,
-                                IsSolo = s.IsSolo
-                            });
-                        });
-
                         trackRoll.TrackElements.Clear();
                         saveData.GetTrackNodes().ForEach(n => {
                             trackRoll.AddNewTrackElement(n.Notes, n.TrackNumber, n.StartBar);
                         });
 
+                        trackControls.Clear();
+                        saveData.GetTrackStates().OrderBy(s => s.TrackNumber).ToList().ForEach(s => {
+                            trackControls.Add(new TrackControlPanel() {
+                                Synth = Synths.FirstOrDefault(sy => sy.Id == s.SynthId),
+                                IsMute = s.IsMute,
+                                IsSolo = s.IsSolo,
+                                TrackNumber = s.TrackNumber
+                            });
+                        });
+
+                        trackControls.Init();
+
                         trackRoll.Rhythm = _rhythm;
+
+                        Invalidate();
                     }
                 }
             }

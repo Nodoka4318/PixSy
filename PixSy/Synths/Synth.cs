@@ -70,7 +70,7 @@ namespace PixSy.Synths {
                 wo.Play();
 
                 while (wo.PlaybackState == PlaybackState.Playing) {
-                    await Task.Delay(100);
+                    await Task.Delay(1);
                 }
             }
         }

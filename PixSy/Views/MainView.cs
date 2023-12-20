@@ -1,4 +1,7 @@
-﻿using NAudio.Midi;
+﻿using NAudio.Dmo;
+using NAudio.Midi;
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 using PixSy.IO.Save;
 using PixSy.Synths;
 using PixSy.Views.Widgets;
@@ -8,6 +11,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,6 +29,8 @@ namespace PixSy.Views {
         private float _frequency = 440.00f;
         private Timer _playTimer;
         private List<Note> _playingNotes;
+        private ISampleProvider _playCache;
+        private WaveOut _playWaveOut;
 
         public MainView() {
             InitializeComponent();
@@ -38,9 +44,30 @@ namespace PixSy.Views {
 
             _playTimer.Interval = (int)(60f / (float)_bpm * 100f);
             _playTimer.Tick += _playTimer_Tick;
+
+            trackRoll.CurrentPlayHPosDragged += TrackRoll_CurrentPlayHPosUpdated;
+        }
+
+        private void TrackRoll_CurrentPlayHPosUpdated(object? sender, EventArgs e) {
+            if (_playTimer.Enabled) {
+                if (_playWaveOut.PlaybackState == PlaybackState.Playing) {
+                    _playWaveOut.Stop();
+                }
+
+                InitPlaySample();
+                InitPlayWaveOut(TimeSpan.FromSeconds(trackRoll.CurrentPlayHPos * 60f / (float)_bpm));
+
+                Task.Run(async () => {
+                    _playWaveOut.Play();
+                    while (_playWaveOut.PlaybackState == PlaybackState.Playing) {
+                        await Task.Delay(100);
+                    }
+                });
+            }
         }
 
         private void _playTimer_Tick(object? sender, EventArgs e) {
+            /*
             var currentNotes = new List<Note>();
             IEnumerable<List<Note>> currentNoteLists;
 
@@ -62,6 +89,7 @@ namespace PixSy.Views {
 
             foreach (var note in notesToPlay) {
                 var sound = note.GetSoundSignal(_bpm);
+                //var sound = note.SoundCache;
 
                 Task.Run(async () => {
                     await Synth.PlaySound(sound);
@@ -69,7 +97,38 @@ namespace PixSy.Views {
             }
 
             _playingNotes = currentNotes;
+            */
             trackRoll.CurrentPlayHPos += 0.1f;
+        }
+
+        private void InitPlaySample() {
+            var trackSamples = new List<ISampleProvider>();
+            IEnumerable<TrackRoll.TrackElement> tracks;
+
+            if (TrackControls.TrackControlPanels.Exists(p => p.IsSolo)) {
+                tracks = trackRoll.TrackElements.Where(e => e.PianoRoll.TrackControl.IsSolo);            
+            } else {
+                tracks = trackRoll.TrackElements.Where(e => !e.PianoRoll.TrackControl.IsMute);
+            }
+
+            foreach (var t in tracks) {
+                var samples = new List<ISampleProvider>();
+                foreach (var n in t.PianoRoll.Notes) {
+                    var sample = new OffsetSampleProvider(n.GetSoundSignal(_bpm)) {
+                        DelayBy = TimeSpan.FromSeconds((n.StartF + t.HPos * _rhythm) * 60f / (float)_bpm)
+                    };
+                    samples.Add(sample);
+                }
+
+                trackSamples.Add(new MixingSampleProvider(samples));
+            }
+
+            _playCache = new MixingSampleProvider(trackSamples);
+        }
+
+        private void InitPlayWaveOut(TimeSpan position) {
+            _playWaveOut = new WaveOut();
+            _playWaveOut.Init(_playCache.Skip(position)); // TODO: 鋳型の位置も変わってしまう
         }
 
         private void playToolStripMenuItem_Click(object sender, EventArgs e) {
@@ -77,6 +136,16 @@ namespace PixSy.Views {
             trackRoll.TrackElements.ForEach(e => e.PianoRoll.IsPlaying = true);
 
             if (!_playTimer.Enabled) {
+                InitPlaySample();
+                InitPlayWaveOut(TimeSpan.FromSeconds(trackRoll.CurrentPlayHPos * 60f / (float)_bpm));
+
+                Task.Run(async () => {
+                    _playWaveOut.Play();
+                    while (_playWaveOut.PlaybackState == PlaybackState.Playing) {
+                        await Task.Delay(100);
+                    }
+                });
+
                 trackRoll.IsPlaying = true;
                 _playTimer.Start(DateTime.Now);
             }
@@ -86,6 +155,10 @@ namespace PixSy.Views {
             if (_playTimer.Enabled) {
                 trackRoll.IsPlaying = false;
                 _playTimer.Stop();
+
+                if (_playWaveOut.PlaybackState == PlaybackState.Playing) {
+                    _playWaveOut.Pause();
+                }
             }
 
             trackRoll.TrackElements.ForEach(e => e.PianoRoll.IsPlaying = false);
@@ -95,6 +168,10 @@ namespace PixSy.Views {
             if (_playTimer.Enabled) {
                 trackRoll.IsPlaying = false;
                 _playTimer.Stop();
+
+                if (_playWaveOut.PlaybackState == PlaybackState.Playing) {
+                    _playWaveOut.Stop();
+                }
             }
 
             trackRoll.TrackElements.ForEach(e => e.PianoRoll.IsPlaying = false);

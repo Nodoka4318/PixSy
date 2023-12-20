@@ -126,11 +126,14 @@ namespace PixSy.Views.Widgets {
                 */
 
                 _trackElements.ForEach(e => e.PianoRoll.CurrentPlayHPos = value - e.HPos * Rhythm);
+
                 Invalidate();
             }
         }
 
         public TrackControls TrackControls { get; set; }
+
+        public event EventHandler? CurrentPlayHPosDragged { add => _currentPlayHPosDragged += value; remove => _currentPlayHPosDragged -= value;}
 
         private List<TrackElement> _trackElements;
         private int _hPos;
@@ -141,6 +144,7 @@ namespace PixSy.Views.Widgets {
         private System.Windows.Forms.Timer _mainTimer;
         private float _currentPlayHPos; // 再生中の位置
         private int _rhythm;
+        private event EventHandler? _currentPlayHPosDragged;
 
         public const int TrackHeight = 80; // トラックの高さ
         private const int BarWidth = 120; // 小節の幅
@@ -182,6 +186,7 @@ namespace PixSy.Views.Widgets {
 
         private void TrackRoll_MouseUp(object? sender, MouseEventArgs e) {
             _isDragging = false;
+            _currentPlayHPosDragged?.Invoke(this, new EventArgs());
         }
 
         private void TrackRoll_MouseMove(object? sender, MouseEventArgs e) {

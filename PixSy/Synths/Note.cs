@@ -18,6 +18,7 @@ namespace PixSy.Synths {
         public int Id { get => _id; }
         public bool IsPlaying { get; set; }
         public PianoRoll? Parent { get; set; }
+        public ISampleProvider SoundCache { get; set; }
 
         /// <summary>
         /// C4=0
@@ -64,7 +65,8 @@ namespace PixSy.Synths {
 
         public static string VPosToPitch(int vPos) {
             int index = vPos < 0 ? (-vPos % 12 == 0 ? 0 : 12 - (-vPos) % 12) : vPos % 12;
-            int octave = 4 + (vPos / 12);
+            int octave = 4 + ((vPos < 0 ? vPos - 11 : vPos) + 3) / 12; // vPos < 0 のときは-11
+
             var pitchName = PitchNames[index] + octave;
 
             return pitchName;

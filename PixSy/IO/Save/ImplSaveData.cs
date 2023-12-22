@@ -9,6 +9,7 @@ using System.Xml.Serialization;
 namespace PixSy.IO.Save {
     [XmlRoot("PixSyProj")]
     public class ImplSaveData : ISaveData {
+        public int projectFormatRevision;
         public int bpm = 120;
         public string? id = Guid.Empty.ToString();
         public string? projectName = "MySong";
@@ -24,6 +25,10 @@ namespace PixSy.IO.Save {
 
         public string? GetId() {
             return id;
+        }
+
+        public int GetProjectFormatRevision() {
+            return projectFormatRevision;
         }
 
         public string? GetProjectName() {

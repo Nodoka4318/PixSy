@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace PixSy.IO.Save {
     public interface ISaveData {
+        int GetProjectFormatRevision();
         string? GetProjectName();
         string? GetId();
         int GetBpm();

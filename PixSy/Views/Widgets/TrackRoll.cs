@@ -175,6 +175,7 @@ namespace PixSy.Views.Widgets {
             MouseDown += TrackRoll_MouseDown;
             MouseMove += TrackRoll_MouseMove;
             MouseUp += TrackRoll_MouseUp;
+            MouseWheel += TrackRoll_MouseWheel;
 
             _mainTimer = new System.Windows.Forms.Timer();
             _mainTimer.Interval = 100;
@@ -182,6 +183,14 @@ namespace PixSy.Views.Widgets {
                 Invalidate();
             };
             _mainTimer.Start();
+        }
+
+        private void TrackRoll_MouseWheel(object? sender, MouseEventArgs e) {
+            if (e.Delta > 0) {
+                VPos = VPos == 0 ? 0 : VPos - 1;
+            } else {
+                VPos = VPos == vScrollBar.Maximum ? vScrollBar.Maximum : VPos + 1;
+            }
         }
 
         private void TrackRoll_MouseUp(object? sender, MouseEventArgs e) {

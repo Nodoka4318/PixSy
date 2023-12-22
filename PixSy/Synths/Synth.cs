@@ -57,11 +57,21 @@ namespace PixSy.Synths {
         }
 
         public ISampleProvider GetSoundSignal(float frequency, float second) {
+            return GetSoundSignal(frequency, second, 0.2f);
+        }
+
+        public ISampleProvider GetSoundSignal(float frequency, float second, float volume) {
             return new SignalGenerator() {
-                Gain = 0.2,
+                Gain = volume,
                 Frequency = frequency,
                 Type = Type
-            }.Take(TimeSpan.FromMilliseconds((int) (second * 1000) + _adjustMilSec));
+            }.Take(TimeSpan.FromMilliseconds((int)(second * 1000) + _adjustMilSec));
+        }
+
+        public ISampleProvider GetSoundSignal(float frequency, float second, float volume, float pan) {
+            return new PanningSampleProvider(GetSoundSignal(frequency, second, volume).ToMono()) {
+                Pan = pan
+            };
         }
 
         public static async Task PlaySound(ISampleProvider sound) {

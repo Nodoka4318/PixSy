@@ -3,6 +3,7 @@ using NAudio.Midi;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using PixSy.IO.Save;
+using PixSy.IO.Save.Extensions;
 using PixSy.Synths;
 using PixSy.Views.Widgets;
 using System;
@@ -23,20 +24,50 @@ namespace PixSy.Views {
         public List<Synth> Synths => synthsPanel.Synths;
         public List<TrackRoll.TrackElement> TrackElements => trackRoll.TrackElements;
         public TrackControls TrackControls => trackControls;
+        public TrackRoll TrackRoll => trackRoll;
+        public int Bpm {
+            get => _bpm;
+            set {
+                _bpm = value;
+                bpmToolStripMenuItem.Text = $"{_bpm} BPM";
+
+                _playTimer.Interval = (int)(60f / (float)_bpm * 100f);
+            }
+        }   
+
+        public int Rhythm {
+            get => _rhythm;
+            set {
+                _rhythm = value;
+                rhythmToolStripMenuItem.Text = $"{_rhythm}拍子";
+
+                trackRoll.Rhythm = _rhythm;
+            }
+        }
+
+        public float Frequency {
+            get => _frequency;
+            set {
+                _frequency = value;
+                freqToolStripMenuItem.Text = $"{_frequency.ToString("F2")}Hz";
+
+                Note.Tuning = _frequency;
+            }
+        }
 
         private int _bpm = 120;
         private int _rhythm = 4;
         private float _frequency = 440.00f;
         private Timer _playTimer;
         private List<Note> _playingNotes;
-        private ISampleProvider _playCache;
+        private ISampleProvider? _playCache;
         private WaveOut _playWaveOut;
 
         public MainView() {
             InitializeComponent();
 
             Text = $"{PixSyAppInfo.AppName} ({PixSyAppInfo.Version})";
-            trackControls.Width = TrackRoll.TrackHeight;
+            trackControls.Width = TrackRoll.TrackHeight * 4;
             trackRoll.TrackControls = trackControls;
 
             _playTimer = new Timer();
@@ -123,12 +154,21 @@ namespace PixSy.Views {
                 trackSamples.Add(new MixingSampleProvider(samples));
             }
 
-            _playCache = new MixingSampleProvider(trackSamples);
+            if (trackSamples.Count == 0) {
+                _playCache = null;
+            } else {
+                _playCache = new MixingSampleProvider(trackSamples);
+            }
         }
 
         private void InitPlayWaveOut(TimeSpan position) {
             _playWaveOut = new WaveOut();
-            _playWaveOut.Init(_playCache.Skip(position)); // TODO: 鋳型の位置も変わってしまう
+
+            if (_playCache != null) {
+                _playWaveOut.Init(_playCache.Skip(position)); // TODO: 鋳型の位置も変わってしまう
+            } else {
+                _playWaveOut.Init(new SilenceWaveProvider());
+            }
         }
 
         private void playToolStripMenuItem_Click(object sender, EventArgs e) {
@@ -248,75 +288,19 @@ namespace PixSy.Views {
         }
 
         private void saveNewToolStripMenuItem_Click(object sender, EventArgs e) {
-            using (var dlg = new SaveFileDialog()) {
-                dlg.Filter = "PixSyプロジェクトファイル|*.pixsy";
-                dlg.Title = "名前を付けて保存";
-
-                if (dlg.ShowDialog() == DialogResult.OK) {
-                    var saveData = new ImplSaveData() {
-                        bpm = _bpm,
-                        rhythm = _rhythm,
-                        tuningFrequency = _frequency,
-                        synths = Synths.Select(s => WrapperSynth.Wrap(s)).ToList(),
-                        trackNodes = TrackElements.Select(e => new TrackNode() {
-                            Notes = e.PianoRoll.Notes.Select(n => WrapperNote.Wrap(n)).ToList(),
-                            StartBar = e.StartBar,
-                            TrackNumber = e.TrackNumber
-                        }).ToList(),
-
-                        trackStates = TrackControls.TrackControlPanels.Select(c => new TrackState() {
-                            TrackNumber = c.TrackNumber,
-                            SynthId = c.Synth.Id,
-                            IsSolo = c.IsSolo,
-                            IsMute = c.IsMute
-                        }).ToList()
-
-
-                    };
-
-                    SaveManager.Save(dlg.FileName, saveData);
-                }
-            }
+            this.Save();
         }
 
         private void openProjectToolStripMenuItem_Click(object sender, EventArgs e) {
             using (var dlg = new OpenFileDialog()) {
-                dlg.Filter = "PixSyプロジェクトファイル|*.pixsy";
+                dlg.Filter = "PixSyプロジェクトファイル|*.pixsyproj|すべてのファイル|*.*";
                 dlg.Title = "プロジェクトを開く";
 
                 if (dlg.ShowDialog() == DialogResult.OK) {
                     var saveData = SaveManager.Load(dlg.FileName);
 
                     if (saveData != null) {
-                        _bpm = saveData.GetBpm();
-                        _rhythm = saveData.GetRhythm();
-                        _frequency = saveData.GetTuningFrequency();
-
-                        bpmToolStripMenuItem.Text = $"{_bpm} BPM";
-                        rhythmToolStripMenuItem.Text = $"{_rhythm}拍子";
-                        freqToolStripMenuItem.Text = $"{_frequency.ToString("F2")}Hz";
-
-                        Synths.Clear();
-                        Synths.AddRange(saveData.GetSynths().Select(s => s.GetSynth()));
-
-                        trackRoll.TrackElements.Clear();
-                        saveData.GetTrackNodes().ForEach(n => {
-                            trackRoll.AddNewTrackElement(n.Notes, n.TrackNumber, n.StartBar);
-                        });
-
-                        trackControls.Clear();
-                        saveData.GetTrackStates().OrderBy(s => s.TrackNumber).ToList().ForEach(s => {
-                            trackControls.Add(new TrackControlPanel() {
-                                Synth = Synths.FirstOrDefault(sy => sy.Id == s.SynthId),
-                                IsMute = s.IsMute,
-                                IsSolo = s.IsSolo,
-                                TrackNumber = s.TrackNumber
-                            });
-                        });
-
-                        trackControls.Init();
-
-                        trackRoll.Rhythm = _rhythm;
+                        this.LoadSaveData(saveData);
 
                         Invalidate();
                     }

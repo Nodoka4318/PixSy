@@ -99,7 +99,11 @@ namespace PixSy.Synths {
                 var freq = Frequency;
                 var sec = Length / bpm * 60f;
 
-                return synth.GetSoundSignal(freq, sec);
+                if (Parent.TrackControl.NAudioCompatiblePan == 0) {
+                    return synth.GetSoundSignal(freq, sec, Parent.TrackControl.NAudioCompatibleVolume);
+                } else {
+                    return synth.GetSoundSignal(freq, sec, Parent.TrackControl.NAudioCompatibleVolume, Parent.TrackControl.NAudioCompatiblePan);
+                }
             }
 
             throw new NullReferenceException("Synth is null");

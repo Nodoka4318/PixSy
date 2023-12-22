@@ -11,5 +11,7 @@ namespace PixSy.IO.Save {
         public string? SynthId { get; set; }
         public bool IsSolo { get; set; }
         public bool IsMute { get; set; }
+        public int Volume { get; set; } = 10;
+        public int Pan { get; set; } = 0;
     }
 }

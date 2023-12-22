@@ -33,7 +33,7 @@ namespace PixSy.Views {
 
                 _playTimer.Interval = (int)(60f / (float)_bpm * 100f);
             }
-        }   
+        }
 
         public int Rhythm {
             get => _rhythm;
@@ -77,24 +77,15 @@ namespace PixSy.Views {
             _playTimer.Tick += _playTimer_Tick;
 
             trackRoll.CurrentPlayHPosDragged += TrackRoll_CurrentPlayHPosUpdated;
+            trackControls.ValueChanged += TrackControls_ValueChanged;
+        }
+
+        private void TrackControls_ValueChanged(object? sender, EventArgs e) {
+            UpdatePlaySample();
         }
 
         private void TrackRoll_CurrentPlayHPosUpdated(object? sender, EventArgs e) {
-            if (_playTimer.Enabled) {
-                if (_playWaveOut.PlaybackState == PlaybackState.Playing) {
-                    _playWaveOut.Stop();
-                }
-
-                InitPlaySample();
-                InitPlayWaveOut(TimeSpan.FromSeconds(trackRoll.CurrentPlayHPos * 60f / (float)_bpm));
-
-                Task.Run(async () => {
-                    _playWaveOut.Play();
-                    while (_playWaveOut.PlaybackState == PlaybackState.Playing) {
-                        await Task.Delay(100);
-                    }
-                });
-            }
+            UpdatePlaySample();
         }
 
         private void _playTimer_Tick(object? sender, EventArgs e) {
@@ -132,12 +123,30 @@ namespace PixSy.Views {
             trackRoll.CurrentPlayHPos += 0.1f;
         }
 
+        public void UpdatePlaySample() {
+            if (_playTimer.Enabled) {
+                if (_playWaveOut.PlaybackState == PlaybackState.Playing) {
+                    _playWaveOut.Stop();
+                }
+
+                InitPlaySample();
+                InitPlayWaveOut(TimeSpan.FromSeconds(trackRoll.CurrentPlayHPos * 60f / (float)_bpm));
+
+                Task.Run(async () => {
+                    _playWaveOut.Play();
+                    while (_playWaveOut.PlaybackState == PlaybackState.Playing) {
+                        await Task.Delay(1);
+                    }
+                });
+            }
+        }
+
         private void InitPlaySample() {
             var trackSamples = new List<ISampleProvider>();
             IEnumerable<TrackRoll.TrackElement> tracks;
 
             if (TrackControls.TrackControlPanels.Exists(p => p.IsSolo)) {
-                tracks = trackRoll.TrackElements.Where(e => e.PianoRoll.TrackControl.IsSolo);            
+                tracks = trackRoll.TrackElements.Where(e => e.PianoRoll.TrackControl.IsSolo);
             } else {
                 tracks = trackRoll.TrackElements.Where(e => !e.PianoRoll.TrackControl.IsMute);
             }
@@ -151,7 +160,9 @@ namespace PixSy.Views {
                     samples.Add(sample);
                 }
 
-                trackSamples.Add(new MixingSampleProvider(samples));
+                if (samples.Count > 0) {
+                    trackSamples.Add(new MixingSampleProvider(samples));
+                }
             }
 
             if (trackSamples.Count == 0) {
@@ -182,7 +193,7 @@ namespace PixSy.Views {
                 Task.Run(async () => {
                     _playWaveOut.Play();
                     while (_playWaveOut.PlaybackState == PlaybackState.Playing) {
-                        await Task.Delay(100);
+                        await Task.Delay(1);
                     }
                 });
 

@@ -70,11 +70,24 @@ namespace PixSy.Views.Widgets {
         public float NAudioCompatibleVolume => (float)Volume / 15.0f * 1.0f;
         public float NAudioCompatiblePan => (float)Pan / 10.0f;
 
+        public event EventHandler? ValueChanged {
+            add {
+                _valueChanged += value;
+            }
+
+            remove {
+                _valueChanged -= value;
+            }
+        }
+
         private Synth _synth;
         private bool _isSolo;
         private bool _isMute;
         private int _volume = 10;
         private int _pan = 0;
+        private event EventHandler? _valueChanged;
+        private int _lastVolume;
+        private int _lastPan;
 
         public TrackControlPanel() {
             InitializeComponent();
@@ -100,6 +113,23 @@ namespace PixSy.Views.Widgets {
 
             volumeTrackBar.ValueChanged += VolumeTrackBar_ValueChanged;
             panTrackBar.ValueChanged += PanTrackBar_ValueChanged;
+
+            volumeTrackBar.MouseUp += VolumeTrackBar_MouseUp;
+            panTrackBar.MouseUp += PanTrackBar_MouseUp;
+        }
+
+        private void PanTrackBar_MouseUp(object? sender, MouseEventArgs e) {
+            if (_lastPan != panTrackBar.Value) {
+                _valueChanged?.Invoke(this, EventArgs.Empty);
+                _lastPan = panTrackBar.Value;
+            }
+        }
+
+        private void VolumeTrackBar_MouseUp(object? sender, MouseEventArgs e) {
+            if (_lastVolume != volumeTrackBar.Value) {
+                _valueChanged?.Invoke(this, EventArgs.Empty);
+                _lastVolume = volumeTrackBar.Value;
+            }
         }
 
         private void PanTrackBar_ValueChanged(object? sender, EventArgs e) {
@@ -118,6 +148,8 @@ namespace PixSy.Views.Widgets {
             }
 
             soloButton.BackColor = val ? Color.LightGreen : Color.WhiteSmoke;
+
+            _valueChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void ToggleMute(bool val) {
@@ -128,6 +160,8 @@ namespace PixSy.Views.Widgets {
             }
 
             muteButton.BackColor = val ? Color.LightCoral : Color.WhiteSmoke;
+
+            _valueChanged?.Invoke(this, EventArgs.Empty);
         }
 
         private void soloButton_Click(object sender, EventArgs e) {
@@ -145,6 +179,8 @@ namespace PixSy.Views.Widgets {
 
                 if (dlg.ShowDialog() == DialogResult.OK) {
                     Synth = dlg.Selected;
+
+                    _valueChanged?.Invoke(this, EventArgs.Empty);
                 } else {
                     Synth = Synth.DefaultSynth;
                 }
@@ -162,6 +198,8 @@ namespace PixSy.Views.Widgets {
                 if (int.TryParse(dlg.InputText, out volume)) {
                     if (!(volume < 0 || volume > 15)) {
                         Volume = volume;
+
+                        _valueChanged?.Invoke(this, EventArgs.Empty);
                     } else {
                         MessageBox.Show("Levelは0から15の範囲で設定してください。", "PixSy", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
@@ -182,6 +220,8 @@ namespace PixSy.Views.Widgets {
                 if (int.TryParse(dlg.InputText, out pan)) {
                     if (!(pan < -10 || pan > 10)) {
                         Pan = pan;
+
+                        _valueChanged?.Invoke(this, EventArgs.Empty);
                     } else {
                         MessageBox.Show("Panは-10から10の範囲で設定してください。", "PixSy", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }

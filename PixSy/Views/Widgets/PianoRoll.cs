@@ -177,14 +177,20 @@ namespace PixSy.Views.Widgets {
                 Invalidate();
             } else if (_isDragging) {
                 var startF = pointHPos - _dragOffset;
-
+                var playSound = false;
                 if (startF < 0) {
                     startF = 0;
                 }
 
+                playSound = _selectedNote.VPos != pointVPos;
+
                 _selectedNote.VPos = pointVPos;
                 _selectedNote.StartF = startF - (startF % 0.1f);
                 _selectedNote.EndF = _selectedNote.StartF + len;
+
+                if (playSound) {
+                    Task.Run(() => Synth.PlaySound(Synth.GetSoundSignal(_selectedNote.Frequency, 0.1f)));
+                }
 
                 Invalidate();
             }
@@ -217,11 +223,15 @@ namespace PixSy.Views.Widgets {
                     _draggingEdge = _dragOffset < 0.1f ? (byte)1 : _selectedNote.Length - _dragOffset < 0.1f ? (byte)2 : (byte)0;
                     _isResizing = _draggingEdge != 0;
 
+                    Task.Run(() => Synth.PlaySound(Synth.GetSoundSignal(_selectedNote.Frequency, 0.1f)));
+
                     Invalidate();
                 } else if (Mode == EditMode.Pen) {
                     var pointHPos = _hPos + cPoint.X / (float)BeatWidth;
                     var pointVPos = _vPos - cPoint.Y / KeyHeight;
                     _selectedNote = AddNewNote(pointVPos, pointHPos - (pointVPos % 0.1f));
+
+                    Task.Run(() => Synth.PlaySound(Synth.GetSoundSignal(_selectedNote.Frequency, 0.1f)));
 
                     Invalidate();
                 } else {

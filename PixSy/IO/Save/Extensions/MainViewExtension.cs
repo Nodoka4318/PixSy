@@ -20,14 +20,17 @@ namespace PixSy.IO.Save.Extensions {
 
             mainView.TrackControls.Clear();
             saveData.GetTrackStates().OrderBy(s => s.TrackNumber).ToList().ForEach(s => {
-                mainView.TrackControls.Add(new TrackControlPanel() {
+                var ctrlPanel = new TrackControlPanel() {
                     Synth = mainView.Synths.FirstOrDefault(sy => sy.Id == s.SynthId),
                     IsMute = s.IsMute,
                     IsSolo = s.IsSolo,
                     TrackNumber = s.TrackNumber,
                     Volume = s.Volume,
                     Pan = s.Pan
-                });
+                };
+                ctrlPanel.ValueChanged += (s, e) => mainView.UpdatePlaySample();
+
+                mainView.TrackControls.Add(ctrlPanel);
             });
             mainView.TrackControls.Init();
 

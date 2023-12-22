@@ -19,10 +19,20 @@ namespace PixSy.Views.Widgets {
             }
         }
 
+        public event EventHandler? ValueChanged {
+            add {
+                _valueChanged += value;
+            }
+            remove {
+                _valueChanged -= value;
+            }
+        }
+
         public List<TrackControlPanel> TrackControlPanels => _trackControlPanels;
 
         private int _vPos = 0;
         private List<TrackControlPanel> _trackControlPanels;
+        private event EventHandler? _valueChanged;
 
         public TrackControls() {
             InitializeComponent();
@@ -47,6 +57,10 @@ namespace PixSy.Views.Widgets {
 
                     panel.Location = new Point(0, i * trackHeight);
                     panel.TrackNumber = i + _vPos + 1;
+
+                    panel.ValueChanged += (s, e) => {
+                        _valueChanged?.Invoke(s, e);
+                    };
 
                     Controls.Add(panel);
                     _trackControlPanels.Add(panel);
